@@ -1,3 +1,5 @@
+Status: Not yet runnable ❌
+
 ## GoLang Testing Grounds
 ### Screenshare tutorial
 
@@ -5,6 +7,6 @@
 
 
 
-
 ### Devnotes
-install packages with ```go get %moduleName%```
+install new packages with ```go get %moduleName%```✔️
+> example ```github.com/kbinani/screenshot```
