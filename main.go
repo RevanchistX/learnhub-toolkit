@@ -1,68 +1,63 @@
 package main
 
+
 import (
-	"bytes"
-	"fmt"
+	"gioui.org/app"
+	"gioui.org/font/gofont"
+	"gioui.org/op"
+	"gioui.org/op/paint"
+	"gioui.org/text"
+	"gioui.org/widget/material"
+	"github.com/kbinani/screenshot"
+	"image"
 	"log"
-	"net/http"
 	"os"
-	"os/signal"
-	"path/filepath"
-	"syscall"
-	"time"
 )
 
 func main() {
-	address := ":8080"
-	prefix := "/"
-	root := "./wasm/"
-
-	var err error
-	root, err = filepath.Abs(root)
-
-	currentTime := time.Now()
-	fmt.Println("Share screen is starting", currentTime.Format("Mon 02 Jan 2006 03:04pm"))
-	log.Printf("serving %s as %s on %s", root, prefix, address)
-	http.Handle(prefix, http.StripPrefix(prefix, http.FileServer(http.Dir(root))))
-
-	//routes
-	http.HandleFunc("/start-sharing", takeScreenshot)
-	http.HandleFunc("/shared-screen", fetchScreenshot)
-	http.HandleFunc("/stop-sharing", stopSharing)
-	http.HandleFunc("/fetch-png", fetchPNG)
-
-	mux := http.DefaultServeMux.ServeHTTP
-	logger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.RemoteAddr + " " + r.Method + " " + r.URL.String())
-	})
-	err = http.ListenAndServe(address, logger)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	gracefulTerminateSystem()
-}
-
-func takeScreenshot(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, "Sharing screen Started")
-	ticker := time.NewTicker(500)
-	defer ticker.Stop()
-	buffer := new(bytes.Buffer)
-	//TODO finish watching video  https://www.youtube.com/watch?v=aKFD5UmdzQQ&t=6m5s
-	//screenRegion := image.Rect(0, 0, 800, 600)  - portion of screen
-
-}
-func fetchScreenshot(w http.ResponseWriter, r *http.Request) {}
-func stopSharing(w http.ResponseWriter, r *http.Request)     {}
-func fetchPNG(w http.ResponseWriter, r *http.Request)        {}
-
-func gracefulTerminateSystem() {
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-c
-		interrupt <- true
-		fmt.Println("Ctrl+C was pressed in terminal")
+		w := new(app.Window)
+		if err := loop(w); err != nil {
+			log.Fatal(err)
+		}
 		os.Exit(0)
 	}()
+	app.Main()
+}
+
+func loop(w *app.Window) error {
+	th := material.NewTheme()
+	th.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
+	var ops op.Ops
+	for {
+		switch e := w.Event().(type) {
+		case app.DestroyEvent:
+			return e.Err
+		case app.FrameEvent:
+			gtx := app.NewContext(&ops, e)
+			for i := 0; i < screenshot.NumActiveDisplays(); i++ {
+				img := generateImage(i)
+				drawImage(&ops, img)
+			}
+			e.Frame(gtx.Ops)
+			w.Invalidate()
+		}
+	}
+}
+
+func drawImage(ops *op.Ops, img image.Image) {
+	imageOp := paint.NewImageOp(img)
+	imageOp.Filter = paint.FilterNearest
+	imageOp.Add(ops)
+	paint.PaintOp{}.Add(ops)
+}
+
+func generateImage(index int) image.Image {
+	bounds := screenshot.GetDisplayBounds(index)
+	capturedImg, err := screenshot.CaptureRect(bounds)
+	if err != nil {
+		panic(err)
+	}
+
+	return image.Image(capturedImg)
 }
