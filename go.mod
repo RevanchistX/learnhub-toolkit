@@ -1,6 +1,6 @@
 module lh-toolkit
 
-go 1.22.0
+go 1.22.3
 
 require (
 	gioui.org v0.6.0
