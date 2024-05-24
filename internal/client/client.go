@@ -1,29 +1,34 @@
 package client
 
 import (
+	"bytes"
+	"fmt"
 	"gioui.org/app"
 	"gioui.org/f32"
 	"gioui.org/op"
 	"gioui.org/op/paint"
 	"github.com/kbinani/screenshot"
 	"image"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 )
 
 func AppClient() {
 
-	go func() {
-		window := new(app.Window)
-		err := loadConfig(window)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := loop(window); err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}()
+	//
+	//go func() {
+	//	window := new(app.Window)
+	//	err := loadConfig(window)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	if err := loop(window); err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	os.Exit(0)
+	//}()
 	app.Main()
 }
 
@@ -62,11 +67,27 @@ func drawImage(ops *op.Ops, imageToDraw image.Image, index int, bounds image.Rec
 	paint.PaintOp{}.Add(ops)
 }
 
+//func generateImage(index int) image.Image {
+//	bounds := screenshot.GetDisplayBounds(index)
+//	capturedImg, err := screenshot.CaptureRect(bounds)
+//	if err != nil {
+//		panic(err)
+//	}
+//	return image.Image(capturedImg)
+//}
+
 func generateImage(index int) image.Image {
-	bounds := screenshot.GetDisplayBounds(index)
-	capturedImg, err := screenshot.CaptureRect(bounds)
+	resp, err := http.Get("http://localhost:8080/streaming")
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	return image.Image(capturedImg)
+	resBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("client: could not read response body: %s\n", err)
+	}
+	img, _, err := image.Decode(bytes.NewReader(resBody))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return img
 }

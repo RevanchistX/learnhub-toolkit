@@ -1,0 +1,84 @@
+<body id="body">
+<div id="app">
+    <img id="stream" alt="stream"/>
+</div>
+<script
+        src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous"></script>
+<script src="./wasm_exec.js"></script>
+<script type="text/javascript">
+    // (function () {
+    //     let conn = new WebSocket("ws://127.0.0.1:8080/streaming");
+    //     conn.onmessage = function (evt) {
+    //         conn.send("next")
+    //         $('#stream').attr("src", URL.createObjectURL(evt.data));
+    //         $('#stream').load(document.URL + ' #stream');
+    //     }
+    // })();
+
+    // (function () {
+    //     let wasmUrl = "./assets/simple.wasm";
+    //     // $.get("./assets/simple.wasm", function (data) {
+    //     // $.get("http://127.0.0.1:8080/wasm", function (data) {
+    //     const go = new Go();
+    //     const importObject = go.importObject;
+    //     fetch(wasmUrl)
+    //         .then((response) => response.arrayBuffer())
+    //         .then((bytes) => WebAssembly.instantiate(bytes, importObject))
+    //         .then((results) => {
+    //             console.log(results)
+    //             // Do something with the results!
+    //         });
+    //     // WebAssembly.instantiateStreaming(fetch(wasmUrl), importObj).then((obj) => console.log(obj))
+    //     // })
+    //
+    // })();
+
+    // https://github.com/torch2424/wasm-by-example/blob/master/demo-util/
+    const wasmBrowserInstantiate = async (wasmModuleUrl, importObject) => {
+        let response = undefined;
+
+        // Check if the browser supports streaming instantiation
+        if (WebAssembly.instantiateStreaming) {
+            // Fetch the module, and instantiate it as it is downloading
+            response = await WebAssembly.instantiateStreaming(
+                fetch(wasmModuleUrl),
+                importObject
+            );
+        } else {
+            // Fallback to using fetch to download the entire module
+            // And then instantiate the module
+            const fetchAndInstantiateTask = async () => {
+                const wasmArrayBuffer = await fetch(wasmModuleUrl).then(response =>
+                    response.arrayBuffer()
+                );
+                return WebAssembly.instantiate(wasmArrayBuffer, importObject);
+            };
+
+            response = await fetchAndInstantiateTask();
+        }
+
+        return response;
+    };
+
+    const runWasmAdd = async () => {
+        // Get the importObject from the go instance.
+        const importObject = go.importObject;
+
+        // Instantiate our wasm module
+        const wasmModule = await wasmBrowserInstantiate("./assets/main.wasm", importObject);
+
+        // Allow the wasm_exec go instance, bootstrap and execute our wasm module
+        await go.run(wasmModule.instance);
+
+        // Call the Add function export from wasm, save the result
+        const addResult = wasmModule.instance.exports.main();
+
+        // Set the result onto the body
+        document.body.textContent = `Hello World! addResult: ${addResult}`;
+    };
+    const go = new Go();
+    console.log(go)
+    runWasmAdd();
+</script>

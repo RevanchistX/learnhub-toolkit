@@ -1,65 +1,67 @@
 package server
 
 import (
-	"gioui.org/app"
-	"gioui.org/f32"
-	"gioui.org/op"
-	"gioui.org/op/paint"
+	"bytes"
+	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/kbinani/screenshot"
 	"image"
-	"log"
-	"os"
+	"image/png"
+	"net"
+	"net/http"
 )
 
 func AppServer() {
-
-	go func() {
-		window := new(app.Window)
-		err := loadConfig(window)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := loop(window); err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}()
-	app.Main()
+	setupRoutes()
+	ip := GetOutboundIP()
+	fmt.Println(ip)
+	http.ListenAndServe(":8080", nil)
 }
 
-func loadConfig(window *app.Window) error {
-	window.Option(app.Title("LearnHub ToolKit Server"), app.Maximized.Option())
+func GetOutboundIP() net.IP {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, address := range addrs {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP
+			}
+		}
+	}
 	return nil
 }
 
-func loop(window *app.Window) error {
-	var ops op.Ops
-	for {
-		switch e := window.Event().(type) {
-		case app.DestroyEvent:
-			os.Exit(0)
-		case app.FrameEvent:
-			layoutContext := app.NewContext(&ops, e)
-			op.Affine(f32.Affine2D{}.Scale(f32.Pt(0, 0), f32.Pt(1, 1))).Add(&ops)
-			for i := 0; i < screenshot.NumActiveDisplays(); i++ {
-				generatedImage := generateImage(i)
-				drawImage(&ops, generatedImage, i, screenshot.GetDisplayBounds(i))
-				//TODO Draw on sharer's screen
-				//drawBounds(&ops, generatedImage.Bounds())
-			}
-			e.Frame(layoutContext.Ops)
-			window.Invalidate()
-		}
-	}
+func setupRoutes() {
+	http.HandleFunc("/streaming", streaming)
+	http.HandleFunc("/wasm", wasm)
 }
 
-func drawImage(ops *op.Ops, imageToDraw image.Image, index int, bounds image.Rectangle) {
-	imageOp := paint.NewImageOp(imageToDraw)
-	imageOp.Filter = paint.FilterNearest
-	imageOp.Add(ops)
-	//TODO resize image to fit container
-	op.Offset(image.Pt(bounds.Dx()/2*index, 0)).Add(ops)
-	paint.PaintOp{}.Add(ops)
+func wasm(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	http.ServeFile(writer, request, "./assets/simple.wasm")
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+func streaming(writer http.ResponseWriter, request *http.Request) {
+	ws, err := upgrader.Upgrade(writer, request, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for true {
+		wsErr := ws.WriteMessage(websocket.BinaryMessage, encodeImage())
+		if wsErr != nil {
+			fmt.Println("am i throwing errors")
+			fmt.Println(err)
+		}
+	}
 }
 
 func generateImage(index int) image.Image {
@@ -69,4 +71,10 @@ func generateImage(index int) image.Image {
 		panic(err)
 	}
 	return image.Image(capturedImg)
+}
+
+func encodeImage() []byte {
+	buffer := new(bytes.Buffer)
+	png.Encode(buffer, generateImage(1))
+	return buffer.Bytes()
 }
