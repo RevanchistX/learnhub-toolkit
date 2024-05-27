@@ -19,7 +19,7 @@
 
 <script type="text/javascript">
     (function () {
-        let conn = new WebSocket("ws://learnhub-toolkit.vercel.app:8080/api/rooms/join/1");
+        let conn = new WebSocket("ws://learnhub-toolkit.vercel.app/api/rooms/join/1");
         conn.onmessage = function (evt) {
             conn.send("next")
             $('#stream').attr("src", URL.createObjectURL(evt.data));

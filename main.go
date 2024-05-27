@@ -1,7 +1,7 @@
 package main
 
 import (
-	"learnhub-toolkit/api"
+	"learnhub-toolkit/api/rooms"
 	"learnhub-toolkit/database"
 	"net/http"
 )
@@ -13,8 +13,8 @@ func main() {
 }
 
 func setupRoutes() {
-	http.HandleFunc("/api/rooms/create", api.CreateRoom)
-	http.HandleFunc("/api/rooms/delete/{id}", api.DeleteRoom)
-	http.HandleFunc("/api/rooms/all", api.AllRooms)
-	http.HandleFunc("/api/rooms/join/{id}", api.JoinRoom)
+	http.HandleFunc("/api/rooms/create", rooms.CreateRoom)
+	http.HandleFunc("/api/rooms/delete/{id}", rooms.DeleteRoom)
+	http.HandleFunc("/api/rooms/all", rooms.AllRooms)
+	http.HandleFunc("/api/rooms/join/{id}", rooms.JoinRoom)
 }
