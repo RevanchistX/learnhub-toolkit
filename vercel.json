@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "internal/server/server.go",
+      "use": "@vercel/go",
+      "config": {
+        "includeFiles": [
+          "internal/**"
+        ]
+      }
+    }
+  ]
+}
