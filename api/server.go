@@ -1,4 +1,4 @@
-package server
+package handler
 
 import (
 	"encoding/json"
@@ -12,13 +12,14 @@ type Room struct {
 	url  url.URL
 }
 
-func setupRoutes() {
-	//http.HandleFunc("/streaming", streaming)
-	//http.HandleFunc("/wasm", wasm)
-	http.HandleFunc("/create-room", createRoom)
-}
+//
+//func setupRoutes() {
+//	//http.HandleFunc("/streaming", streaming)
+//	//http.HandleFunc("/wasm", wasm)
+//	http.HandleFunc("/create-room", createRoom)
+//}
 
-func createRoom(writer http.ResponseWriter, request *http.Request) {
+func CreateRoom(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Content-Type", "application/json")
 
@@ -34,16 +35,18 @@ func createRoom(writer http.ResponseWriter, request *http.Request) {
 		fmt.Print("cannot generate room json")
 	}
 	writer.Write(roomJson)
+	fmt.Fprintf(writer, "Room Json")
 }
 
-func AppServer() {
-	setupRoutes()
-	//ip := GetOutboundIP()
-	//fmt.Println(ip)
-	http.ListenAndServe(":8080", nil)
-}
-
+////export appServer
+//func appServer() {
+//	//setupRoutes()
+//	//ip := GetOutboundIP()
+//	//fmt.Println(ip)
+//	http.Li/**/stenAndServe(":8080", nil)
+//}
 //
+////
 //func GetOutboundIP() net.IP {
 //	addrs, err := net.InterfaceAddrs()
 //	if err != nil {
