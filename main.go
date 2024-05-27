@@ -2,7 +2,7 @@ package main
 
 import (
 	"learnhub-toolkit/api"
-	"learnhub-toolkit/api/database"
+	"learnhub-toolkit/database"
 	"net/http"
 )
 

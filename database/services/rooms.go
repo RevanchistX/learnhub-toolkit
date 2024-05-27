@@ -2,7 +2,7 @@ package services
 
 import (
 	"gorm.io/gorm"
-	"learnhub-toolkit/api/database/models"
+	"learnhub-toolkit/database/models"
 )
 
 type Rooms struct {

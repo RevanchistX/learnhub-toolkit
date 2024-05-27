@@ -8,8 +8,8 @@ import (
 	"github.com/kbinani/screenshot"
 	"image"
 	"image/png"
-	"learnhub-toolkit/api/database/models"
-	"learnhub-toolkit/api/database/services"
+	"learnhub-toolkit/database/models"
+	"learnhub-toolkit/database/services"
 	"net/http"
 	"strconv"
 )

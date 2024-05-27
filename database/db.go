@@ -3,7 +3,7 @@ package database
 import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"learnhub-toolkit/api/database/models"
+	"learnhub-toolkit/database/models"
 )
 
 func Db() *gorm.DB {
